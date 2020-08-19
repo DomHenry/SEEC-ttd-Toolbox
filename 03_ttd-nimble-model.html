@@ -1602,8 +1602,6 @@ div.tocify {
 
 
 <pre class="r"><code>library(tidyverse)
-library(boot)
-library(coda)
 library(nimble)</code></pre>
 <div id="import-workspace" class="section level1" number="1">
 <h1 number="1"><span class="header-section-number">1</span> Import workspace</h1>
@@ -1611,15 +1609,21 @@ library(nimble)</code></pre>
 </div>
 <div id="scale-covariates" class="section level1" number="2">
 <h1 number="2"><span class="header-section-number">2</span> Scale covariates</h1>
-<pre class="r"><code>scaleCen &lt;- function(array) {
+<pre class="r"><code># Scale function
+scaleCen &lt;- function(array) {
   ref &lt;- which(!is.na(array))
   array[ref] &lt;- scale(array[ref])
   return(array)
 }
 
-temp_sc &lt;- scaleCen(temp_arr); cloud_sc &lt;- scaleCen(cloud_arr); wind_sc &lt;- scaleCen(wind_arr)
-min_sc &lt;- scaleCen(mins_arr); jday_sc &lt;- scaleCen(jday_arr)
+# Survey covariates
+temp_sc &lt;- scaleCen(temp_arr) 
+cloud_sc &lt;- scaleCen(cloud_arr)
+wind_sc &lt;- scaleCen(wind_arr)
+min_sc &lt;- scaleCen(mins_arr)
+jday_sc &lt;- scaleCen(jday_arr)
 
+# Site covariates
 site_covs_sc &lt;- site_covs %&gt;% 
   mutate_at(vars(map_ctn:ndvi),scale) %&gt;%
   mutate_at(vars(map_ctn:ndvi),as.numeric)</code></pre>
@@ -1644,7 +1648,7 @@ site_covs_sc &lt;- site_covs %&gt;%
   # Hyperpriors for model of occupancy #
   # ********************************** #    
   
-  # Dorazio, Gotelli, and Ellison (2011)
+  ## Prior choice based on Dorazio, Gotelli, &amp; Ellison (2011)
   
   mu.psi &lt;- ilogit(mu.lpsi)
   mu.lpsi ~ dt(muT,tauT,kT)    
@@ -1715,14 +1719,14 @@ site_covs_sc &lt;- site_covs %&gt;%
   # ******************* #
   for(k in 1:n_spp){
     for (i in 1:n_pen) {
-      for (j in 1:transvec[i]){       # Loop over transects
+      for (j in 1:transvec[i]){       # Loop over survey replicates
         
         Y[i,j,k] ~ dexp(lambda[i,j,k])
         
-        ## Linear model for log(rate)
-        log(lambda[i,j,k]) &lt;- logLambda[k] + alpha1*temp[i,j] + alpha2*wind[i,j] +
-                              alpha3*cloud[i,j] + alpha4*mins[i,j] + 
-                              alpha5*pow(mins[i,j],2) + alpha6*jday[i,j]
+        ## Linear model for log(detection rate)
+        log(lambda[i,j,k]) &lt;- logLambda[k] + alpha1*temp[i,j] + alpha2*wind[i,j] + alpha3*cloud[i,j] + 
+                                             alpha4*mins[i,j] + alpha5*pow(mins[i,j],2) + 
+                                             alpha6*jday[i,j]
         
         ## Accommodation of z=0 and censoring
         d[i,j,k] ~ dbern(theta[i,j,k])
@@ -1742,11 +1746,11 @@ site_covs_sc &lt;- site_covs %&gt;%
   }
   
   for (i in 1:n_pen) {                               
-    Nsite[i] &lt;- sum(z[i,1:n_spp])           # Number of occurring species at each site
+    Nsite[i] &lt;- sum(z[i,1:n_spp])           # Number of species occurring at each site
   } 
 
 })</code></pre>
-<p><strong>Prior choices based on</strong>: Dorazio, R. M., Gotelli, N. J., &amp; Ellison, A. M. (2011). Modern methods of estimating biodiversity from presence-absence surveys. In O. Grillo, &amp; G. Venora (Eds.), Biodiversity loss in a changing planet (pp. 277–302). Rijeka, Croatia: IntechOpen.</p>
+<p><strong>Prior choices based on descriptions on page 298</strong>: Dorazio, R. M., Gotelli, N. J., &amp; Ellison, A. M. (2011). Modern methods of estimating biodiversity from presence-absence surveys. In O. Grillo, &amp; G. Venora (Eds.), Biodiversity loss in a changing planet (pp. 277–302). Rijeka, Croatia: IntechOpen. <a href="https://www.intechopen.com/books/biodiversity-loss-in-a-changing-planet/modern-methods-of-estimating-biodiversity-from-presence-absence-surveys" class="uri">https://www.intechopen.com/books/biodiversity-loss-in-a-changing-planet/modern-methods-of-estimating-biodiversity-from-presence-absence-surveys</a></p>
 <p><strong>Also see</strong>: Banner, KM, Irvine, KM, Rodhouse, TJ. The use of Bayesian priors in Ecology: The good, the bad and the not great. Methods Ecol Evol. 2020; 11: 882– 889. <a href="https://doi.org/10.1111/2041-210X.13407" class="uri">https://doi.org/10.1111/2041-210X.13407</a></p>
 </div>
 <div id="monitored-parameters" class="section level1" number="4">
@@ -1844,10 +1848,10 @@ occ_model &lt;- nimbleModel(code = ttd_model,
                          calculate = TRUE) 
 e0 &lt;- Sys.time()
 e0-s0</code></pre>
-<pre><code>## Time difference of 2.420087 mins</code></pre>
+<pre><code>## Time difference of 2.93205 mins</code></pre>
 <pre class="r"><code>occ_model$initializeInfo()
 occ_model$logProb_alpha1</code></pre>
-<pre><code>## [1] -2.072576</code></pre>
+<pre><code>## [1] -2.071077</code></pre>
 <pre class="r"><code>occ_model$logLambda</code></pre>
 <pre><code>##  [1] -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5
 ## [16] -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5 -6.5
@@ -1872,15 +1876,14 @@ occ_model$logProb_alpha1</code></pre>
 <pre class="r"><code>occ_model$sd.logLambda # Why is this NA?</code></pre>
 <pre><code>## [1] NA</code></pre>
 <pre class="r"><code>occ_model$beta1</code></pre>
-<pre><code>##  [1] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-##  [9] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [17] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [25] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [33] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [41] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [49] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [57] 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193 0.695193
-## [65] 0.695193 0.695193 0.695193 0.695193</code></pre>
+<pre><code>##  [1] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [10] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [19] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [28] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [37] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [46] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [55] 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395 0.15395
+## [64] 0.15395 0.15395 0.15395 0.15395 0.15395</code></pre>
 </div>
 <div id="build-an-mcmc-object-for-this-model" class="section level1" number="10">
 <h1 number="10"><span class="header-section-number">10</span> Build an MCMC object for this model</h1>
@@ -1921,7 +1924,7 @@ occ_model_MCMC &lt;- buildMCMC(occ_model, monitors = params)</code></pre>
 ##   - z[]  (4148 elements)</code></pre>
 <pre class="r"><code>e1 &lt;- Sys.time()
 e1-s1</code></pre>
-<pre><code>## Time difference of 9.720317 mins</code></pre>
+<pre><code>## Time difference of 9.79635 mins</code></pre>
 </div>
 <div id="compile-the-model" class="section level1" number="11">
 <h1 number="11"><span class="header-section-number">11</span> Compile the model</h1>
@@ -1930,12 +1933,12 @@ e1-s1</code></pre>
 comp_occ_mod &lt;- compileNimble(occ_model)
 e2 &lt;- Sys.time()
 e2-s2</code></pre>
-<pre><code>## Time difference of 1.564827 mins</code></pre>
+<pre><code>## Time difference of 1.46922 mins</code></pre>
 <pre class="r"><code>s3 &lt;- Sys.time()
 compile_occ_MCMC &lt;- compileNimble(occ_model_MCMC, project = comp_occ_mod)
 e3 &lt;- Sys.time()
 e3-s3</code></pre>
-<pre><code>## Time difference of 8.139353 mins</code></pre>
+<pre><code>## Time difference of 8.05215 mins</code></pre>
 </div>
 <div id="mcmc-settings" class="section level1" number="12">
 <h1 number="12"><span class="header-section-number">12</span> MCMC settings</h1>
@@ -1977,18 +1980,12 @@ e4-s4</code></pre>
 <h1 number="14"><span class="header-section-number">14</span> Timings</h1>
 <pre class="r"><code>e4-s4 + e3-s3 + e2-s2 + e1-s1 + e0-s0</code></pre>
 </div>
-<div id="write-outputs-to-file" class="section level1" number="15">
-<h1 number="15"><span class="header-section-number">15</span> Write outputs to file</h1>
-<pre class="r"><code>head(runMCMC_samples$summary$all.chains)
+<div id="write-output-to-file" class="section level1" number="15">
+<h1 number="15"><span class="header-section-number">15</span> Write output to file</h1>
+<pre class="r"><code>## Check output
+head(runMCMC_samples$summary$all.chains)
 
-runMCMC_samples$summary$all.chains %&gt;% 
-  as_tibble %&gt;% 
-  mutate(param = rownames(runMCMC_samples$summary$all.chains)) %&gt;% 
-  select(param, everything()) %&gt;% 
-  write_csv(&quot;data output/ttd_nimble_mcmc_out_small.csv&quot;) # Used for testing
-  # write_csv(&quot;data output/ttd_nimble_mcmc_out.csv&quot;)
-
-
+## Write model fit object to file
 saveRDS(runMCMC_samples, &quot;data output/nimble_mcmc_samples_small.rds&quot;) # Used for testing
 # saveRDS(runMCMC_samples, &quot;data output/nimble_mcmc_samples.rds&quot;)</code></pre>
 </div>
