@@ -32,8 +32,10 @@ library(lubridate)
 #' 
 #' # Import data 
 ## -------------------------------------------------------------------------------------------------------------------------
-## Point count data
+## Point count data from surveys in the Karoo 
 birds <- read_csv("data input/bird_count_data.csv") 
+## Pentad = site
+## Survey_id = replicate point count within pentad
 birds
 
 ## Survey covariates
@@ -71,7 +73,7 @@ ttd <- left_join(birds, start_times, by = "survey_id") %>%
   mutate(ttd = replace(ttd,ttd == 0, 10)) %>%             # Replace 0's with 10 secs
   filter(ttd <= 660) %>%                                  # Remove entries where ttd  > 11 mins (Tmax = 660s)
   group_by(survey_id, species) %>% 
-  filter(row_number() == 1) %>%   # NB! Select the first occurrence of a species record in the survey - this is TTD!
+  filter(row_number() == 1) %>%   # NB! Select first occurrence of species record in survey - this is TTD!
   ungroup %>% 
   select(survey_id, pentad, species,ttd, datetime, survey_start)
   
@@ -138,7 +140,7 @@ n_pen <- nrow(pen_sum)
 ## Maximum number of survey replicates across sites
 n_counts <- max(pen_sum$n_survey)
 
-## Create an empty 3D array for TTD observations
+## Create an empty 3D array (Y) for TTD observations
 Y <- array(NA, dim = c(n_pen, n_counts,n_spp))
 
 ## Assign dimnames to array
@@ -179,7 +181,7 @@ for(i in 1:n_pen){
     ## Extract the species detected in the survey
     surv_spp <- as.character(ttd_surv$species)
    
-     ## Assign those TTD value for the combination of site(i), 
+    ## Assign those TTD value for the combination of site(i), 
     ## survey(t), and species(surv_spp) to the Y array
     Y[i,t,surv_spp] <- ttd_surv$ttd
     

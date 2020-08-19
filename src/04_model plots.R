@@ -38,13 +38,13 @@ library(MCMCvis)
 ## -------------------------------------------------------------------------------------------------------------------------
 ## Load workspace with array and input data as well as the MCMC object
 load("data output/TTD_arrays.RData")
-ttd_modfit <- readRDS("data output/nimble_mcmc_samples.rds")
+ttd_modfit <- readRDS("data output/nimble_mcmc_samples.rds") # OR nimble_mcmc_samples_small.rds
 
 #'  
 #' # TTD data exploration
 #' 
 #' ## TTD frequency
-## -------------------------------------------------------------------------------------------------------------------------
+## ----fig.width=5, fig.height=4--------------------------------------------------------------------------------------------
 ## Frequency plot of observed time-to-detection observations
 ttd %>% 
   ggplot(aes(ttd))+
@@ -150,7 +150,7 @@ plot_data
 #' # Detection
 #' 
 #' ## Detection coefficients estimates
-## -------------------------------------------------------------------------------------------------------------------------
+## ----fig.width=5, fig.height=4--------------------------------------------------------------------------------------------
 ## Extract alpha parameters
 alphas <- plot_data %>% 
   filter(str_detect(param,"alpha")) %>% 
@@ -265,7 +265,7 @@ ggarrange(plots_out[[2]] + rremove("xlab"),
 #' # Occupancy
 #' 
 #' ## Occupancy coefficient estimates
-## -------------------------------------------------------------------------------------------------------------------------
+## ----fig.width=5, fig.height=4--------------------------------------------------------------------------------------------
 ## Extract beta parameters (random effects)
 betas <- plot_data %>% 
   filter(str_detect(param,"mu.beta")) %>% 
@@ -628,5 +628,10 @@ plot_occ_predic <- function(cov,covRange,coeffname1,coeffname2,intname,xlab,ylab
   return(finalplot)
   
 }
+
+#' 
+#' # Session information
+## -------------------------------------------------------------------------------------------------------------------------
+sessionInfo()
 
 #' 

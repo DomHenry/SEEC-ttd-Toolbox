@@ -26,8 +26,6 @@ knitr::opts_chunk$set(
 #' 
 ## -------------------------------------------------------------------------------------------------------------------------
 library(tidyverse)
-library(boot)
-library(coda)
 library(nimble)
 
 
@@ -39,15 +37,22 @@ load("data output/TTD_arrays.RData")
 #' 
 #' # Scale covariates 
 ## -------------------------------------------------------------------------------------------------------------------------
+
+# Scale function
 scaleCen <- function(array) {
   ref <- which(!is.na(array))
   array[ref] <- scale(array[ref])
   return(array)
 }
 
-temp_sc <- scaleCen(temp_arr); cloud_sc <- scaleCen(cloud_arr); wind_sc <- scaleCen(wind_arr)
-min_sc <- scaleCen(mins_arr); jday_sc <- scaleCen(jday_arr)
+# Survey covariates
+temp_sc <- scaleCen(temp_arr) 
+cloud_sc <- scaleCen(cloud_arr)
+wind_sc <- scaleCen(wind_arr)
+min_sc <- scaleCen(mins_arr)
+jday_sc <- scaleCen(jday_arr)
 
+# Site covariates
 site_covs_sc <- site_covs %>% 
   mutate_at(vars(map_ctn:ndvi),scale) %>%
   mutate_at(vars(map_ctn:ndvi),as.numeric)
@@ -74,7 +79,7 @@ ttd_model <- nimbleCode({
   # Hyperpriors for model of occupancy #
   # ********************************** #    
   
-  # Dorazio, Gotelli, and Ellison (2011)
+  ## Prior choice based on Dorazio, Gotelli, & Ellison (2011)
   
   mu.psi <- ilogit(mu.lpsi)
   mu.lpsi ~ dt(muT,tauT,kT)    
@@ -145,14 +150,14 @@ ttd_model <- nimbleCode({
   # ******************* #
   for(k in 1:n_spp){
     for (i in 1:n_pen) {
-      for (j in 1:transvec[i]){       # Loop over transects
+      for (j in 1:transvec[i]){       # Loop over survey replicates
         
         Y[i,j,k] ~ dexp(lambda[i,j,k])
         
-        ## Linear model for log(rate)
-        log(lambda[i,j,k]) <- logLambda[k] + alpha1*temp[i,j] + alpha2*wind[i,j] +
-                              alpha3*cloud[i,j] + alpha4*mins[i,j] + 
-                              alpha5*pow(mins[i,j],2) + alpha6*jday[i,j]
+        ## Linear model for log(detection rate)
+        log(lambda[i,j,k]) <- logLambda[k] + alpha1*temp[i,j] + alpha2*wind[i,j] + alpha3*cloud[i,j] + 
+                                             alpha4*mins[i,j] + alpha5*pow(mins[i,j],2) + 
+                                             alpha6*jday[i,j]
         
         ## Accommodation of z=0 and censoring
         d[i,j,k] ~ dbern(theta[i,j,k])
@@ -172,14 +177,14 @@ ttd_model <- nimbleCode({
   }
   
   for (i in 1:n_pen) {                               
-    Nsite[i] <- sum(z[i,1:n_spp])           # Number of occurring species at each site
+    Nsite[i] <- sum(z[i,1:n_spp])           # Number of species occurring at each site
   } 
 
 })
 
 
 #' 
-#' **Prior choices based on**: Dorazio, R. M., Gotelli, N. J., & Ellison, A. M. (2011). Modern methods of estimating biodiversity from presence-absence surveys. In O. Grillo, & G. Venora (Eds.), Biodiversity loss in a changing planet (pp. 277–302). Rijeka, Croatia: IntechOpen.  
+#' **Prior choices based on descriptions on page 298**: Dorazio, R. M., Gotelli, N. J., & Ellison, A. M. (2011). Modern methods of estimating biodiversity from presence-absence surveys. In O. Grillo, & G. Venora (Eds.), Biodiversity loss in a changing planet (pp. 277–302). Rijeka, Croatia: IntechOpen. https://www.intechopen.com/books/biodiversity-loss-in-a-changing-planet/modern-methods-of-estimating-biodiversity-from-presence-absence-surveys
 #'   
 #' **Also see**: Banner, KM, Irvine, KM, Rodhouse, TJ. The use of Bayesian priors in Ecology: The good, the bad and the not great. Methods Ecol Evol. 2020; 11: 882– 889. https://doi.org/10.1111/2041-210X.13407  
 #' 
@@ -365,18 +370,12 @@ floor((ni-nb)/nt)
 ## e4-s4 + e3-s3 + e2-s2 + e1-s1 + e0-s0
 
 #'  
-#' # Write outputs to file 
+#' # Write output to file 
 ## ----eval=FALSE-----------------------------------------------------------------------------------------------------------
+## ## Check output
 ## head(runMCMC_samples$summary$all.chains)
 ## 
-## runMCMC_samples$summary$all.chains %>%
-##   as_tibble %>%
-##   mutate(param = rownames(runMCMC_samples$summary$all.chains)) %>%
-##   select(param, everything()) %>%
-##   write_csv("data output/ttd_nimble_mcmc_out_small.csv") # Used for testing
-##   # write_csv("data output/ttd_nimble_mcmc_out.csv")
-## 
-## 
+## ## Write model fit object to file
 ## saveRDS(runMCMC_samples, "data output/nimble_mcmc_samples_small.rds") # Used for testing
 ## # saveRDS(runMCMC_samples, "data output/nimble_mcmc_samples.rds")
 ## 

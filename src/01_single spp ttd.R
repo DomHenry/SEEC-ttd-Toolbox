@@ -25,11 +25,11 @@ knitr::opts_chunk$set(
 #' 
 #' 
 ## -------------------------------------------------------------------------------------------------------------------------
-library(nimble)    
-library(AHMbook)
-library(unmarked)
-library(tidyverse)
-library(boot)
+library(nimble)     # Bayesian model
+library(AHMbook)    # Data simulation functions 
+library(unmarked)   # Maximum likelihood model
+library(tidyverse)  # Data wrangling 
+library(boot)       # Back transform functions
 
 #' 
 #' # Simulate TTD data
@@ -44,6 +44,9 @@ data <- AHMbook::simOccttd(
   alpha1 = -1,        # Slope of continuous covariate A on log(lambda)
   Tmax = 10           # Maximum survey/search time
 )
+
+## Alternatively just run the following with default arguments
+# data <- simOccttd()
 
 ## Check all components of simulated data set
 str(data)
@@ -97,9 +100,15 @@ summary
 #' 
 #' ## Predict detection probabilites
 ## -------------------------------------------------------------------------------------------------------------------------
+## Calculate probability species is detected at a site given it is present
+
+## Extract a lambda value
 lam <- predict(um_fit, type='det', newdata=data.frame(covA=0.5, covB=0.1))$Predicted
-survey_time <- 5
-pexp(survey_time, lam)
+## Set survey duration
+survey_dur <- 5
+# Detection probability after survey duration using exponential distribution function 
+pexp(survey_dur, lam)  
+# Detection estimates for all observations
 head(getP(um_fit))
 
 
@@ -146,14 +155,11 @@ nim_model <- nimbleCode({
     d[i] ~ dbern(theta[i])
     theta[i] <- z[i] * step(ttd[i] - Tmax) + (1 - z[i])
   }
-  # Derived quantities
-  n.occ <- sum(z[1:nobs])              # Number of occupied sites among M
-}
-)
+})
 
 
 #'  
-#' ## Model inits 
+#' ## Model initial values 
 ## -------------------------------------------------------------------------------------------------------------------------
 ## Initialize with z = 1 throughout all sites
 zst <- rep(1, length(nim_data$ttd))
@@ -209,6 +215,7 @@ summary
 #' # Notes on NIMBLE
 #' 
 #' + NIMBLE [homepage](https://r-nimble.org/)
+#' + nimble-users [Google Group](https://groups.google.com/g/nimble-users) - contains distributions often used in modeling abundance, occupancy and capture-recapture studies.
 #' + nimbleEcology [package](https://r-nimble.org/nimbleecology-custom-nimble-distributions-for-ecologists)
 #' + Installation [instructions](https://r-nimble.org/html_manual/cha-installing-nimble.html)
 #' + [Converting](https://r-nimble.org/nimbleExamples/converting_to_nimble.html) from JAGS, OpenBUGS or WinBUGS
@@ -219,4 +226,9 @@ summary
 #' Efficiency comparison:
 #' 
 #' ![](nimVsjags.jpg)
+#' 
+#' # Session information
+## -------------------------------------------------------------------------------------------------------------------------
+sessionInfo()
+
 #' 
