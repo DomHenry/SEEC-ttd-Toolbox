@@ -2,7 +2,7 @@
 
 This repo contains the slides, code, data and markdown files for the SEEC time-to-detection occupancy model toolbox presented on 20/08/2020.
 
-A recording of the presentation can be found here (*TBD*)
+A recording of the presentation can be found [here](http://meeting.uct.ac.za/ps7rpzxjbn80/?OWASP_CSRFTOKEN=7140d41254ba7d90df69c6e6057a73ab4a55f230e684005c2ab975c903a97dc9)
 
 ## Demo files 
 The HTML files in the home directory contain all the code and results of the demo.
